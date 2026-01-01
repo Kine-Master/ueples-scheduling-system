@@ -1,0 +1,12 @@
+# Ignore the database config with passwords
+backend/config/db.php
+
+# Ignore the setup script (security risk)
+setup.php
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore vendor folders (if you use composer later)
+vendor/

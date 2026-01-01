@@ -1,0 +1,92 @@
+/* Variables */
+:root {
+    --primary: #2c3e50;
+    --bg: #f4f6f9;
+    --white: #ffffff;
+    --text: #333;
+    --danger: #dc3545;
+}
+
+/* Reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100vh;
+}
+
+/* Login Specifics */
+body.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.form-group { margin-bottom: 20px; text-align: left; }
+label { display: block; margin-bottom: 5px; font-weight: bold; }
+input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+.alert-error { background: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+
+
+
+/* Navigation Container Update */
+.top-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Standard Links */
+.top-nav a:not(.btn-logout) {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 500;
+    padding-bottom: 5px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.top-nav a:not(.btn-logout):hover,
+.top-nav a.active {
+    color: #3498db; /* Blue for active/hover */
+    border-bottom: 2px solid #3498db;
+}
+
+/* LOGOUT BUTTON - Nav Link Style */
+.top-nav .btn-logout {
+    text-decoration: none;
+    color: #ff6b6b !important; /* Bright Red Text */
+    font-weight: 500;
+    padding: 0 20px; /* Same padding as other links */
+    height: 100%;    /* Full height to match header */
+    display: flex;
+    align-items: center;
+    gap: 8px; 
+    
+    /* Reset Button Properties */
+    background-color: transparent; 
+    border-radius: 0;
+    border: none;
+    border-bottom: 3px solid transparent; /* Invisible border for alignment */
+    transition: all 0.3s ease;
+}
+
+.top-nav .btn-logout:hover {
+    color: #ff8787 !important; /* Lighter Red on hover */
+    background-color: rgba(255, 107, 107, 0.1); /* Subtle red background */
+    border-bottom: 3px solid #ff6b6b; /* Red underline on hover */
+    transform: none; /* Remove the lift effect */
+}
