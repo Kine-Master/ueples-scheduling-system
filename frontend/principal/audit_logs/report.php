@@ -45,6 +45,23 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function(){
+      var t = localStorage.getItem('ueples_theme') || 'dark';
+      document.documentElement.dataset.theme = t;
+      window.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+      });
+    })();
+    function toggleTheme() {
+      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('ueples_theme', next);
+      var btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
     <title>Audit Log Report</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; padding: 20px; }

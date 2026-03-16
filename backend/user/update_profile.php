@@ -1,55 +1,30 @@
 <?php
-require '../config/db.php';
-require '../config/functions.php';
-
-// 1. Check Session
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
-
-$user_id = $_SESSION['user_id'];
-
-// 2. Capture Inputs
-$first_name = $_POST['first_name'];
-$middle_name = $_POST['middle_name'] ?? '';
-$last_name = $_POST['last_name'];
-$email = $_POST['email'];
-$username = $_POST['username'];
-
-// Professional Details
-$rank = $_POST['academic_rank'] ?? null;
-$school = $_POST['school_college'] ?? null;
-$dept = $_POST['department'] ?? null;
-
+// backend/user/update_profile.php — All authenticated roles can update their own profile.
+header('Content-Type: application/json');
+require_once __DIR__ . '/../config/functions.php';
+requireRoleApi(['admin', 'principal', 'secretary', 'teacher']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['status'=>'error','message'=>'POST only']); exit; }
 try {
-    // 3. Check for Duplicate Username
-    $check = $pdo->prepare("SELECT user_id FROM user WHERE username = ? AND user_id != ?");
-    $check->execute([$username, $user_id]);
-    if ($check->rowCount() > 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Username already taken.']);
-        exit;
-    }
-
-    // 4. Update Database
-    $sql = "UPDATE user SET 
-            first_name=?, middle_name=?, last_name=?, email=?, username=?, 
-            academic_rank=?, school_college=?, department=? 
-            WHERE user_id=?";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$first_name, $middle_name, $last_name, $email, $username, $rank, $school, $dept, $user_id]);
-
-    // 5. Update Session Name Immediately
-    $_SESSION['full_name'] = $first_name . ' ' . $last_name;
-
-    // --- AUDIT LOGGING ---
-    // We use your existing function here.
-    logAudit($user_id, "Updated profile information");
-
-    echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully']);
-
-} catch (PDOException $e) {
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name  = trim($_POST['last_name']  ?? '');
+    if (!$first_name || !$last_name) throw new Exception("First name and last name are required.");
+    $pdo->prepare(
+        "UPDATE user SET first_name=?, middle_name=?, last_name=?,
+                         email=?, academic_rank=?, school_college=?, department=?
+         WHERE user_id=?"
+    )->execute([
+        $first_name, trim($_POST['middle_name'] ?? '') ?: null, $last_name,
+        trim($_POST['email'] ?? '') ?: null,
+        trim($_POST['academic_rank'] ?? '') ?: null,
+        trim($_POST['school_college'] ?? '') ?: null,
+        trim($_POST['department'] ?? '') ?: null,
+        $_SESSION['user_id']
+    ]);
+    // Update session name
+    $_SESSION['full_name'] = "$first_name $last_name";
+    logAudit($_SESSION['user_id'], 'UPDATE_PROFILE', "Updated own profile");
+    echo json_encode(['status' => 'success']);
+} catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

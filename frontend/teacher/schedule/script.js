@@ -1,307 +1,191 @@
-/**
- * TEACHER WORKLOAD SCRIPT (Full CRUD with Multi-day Support)
- */
+// frontend/teacher/schedule/script.js
 
-let currentView = 'grid'; 
-const START_HOUR = 6;
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const START_H = 6;
+const END_H = 18;
+const SLOT_MIN = 15;
+const TOTAL_ROWS = (END_H - START_H) * (60 / SLOT_MIN);
 
-document.addEventListener('DOMContentLoaded', () => {
-    reloadData();
-    setupFormSubmission();
-});
+function formatTime(time24) {
+    if (!time24) return '';
+    const [h, m] = time24.split(':');
+    const d = new Date(); d.setHours(h); d.setMinutes(m);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
 
-// ==========================================
-// 1. VIEW & DATA FETCHING
-// ==========================================
+function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, match =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[match]
+    );
+}
 
+function timeToMins(t24) {
+    if (!t24) return 0;
+    const [h, m] = t24.split(':');
+    return parseInt(h, 10) * 60 + parseInt(m, 10);
+}
+
+function paddedTime(h, m) { return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
+
+function paddingTimeWithSecs(h, m) {
+    const d = new Date(); d.setHours(h, m, 0);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// ── View Toggle ────────────────────────────────────────────────────────────
 function switchView(view) {
-    currentView = view;
-    
-    // UI Toggles
-    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.toggle-btn[onclick="switchView('${view}')"]`).classList.add('active');
+    document.getElementById('btnViewTimetable').classList.toggle('active', view === 'timetable');
+    document.getElementById('btnViewTimetable').style.background = view === 'timetable' ? 'var(--accent)' : 'transparent';
+    document.getElementById('btnViewTimetable').style.color = view === 'timetable' ? '#fff' : 'var(--text-sub)';
 
-    document.getElementById('viewGrid').style.display = view === 'grid' ? 'block' : 'none';
-    document.getElementById('viewList').style.display = view === 'list' ? 'block' : 'none';
+    document.getElementById('btnViewTable').classList.toggle('active', view === 'table');
+    document.getElementById('btnViewTable').style.background = view === 'table' ? 'var(--accent)' : 'transparent';
+    document.getElementById('btnViewTable').style.color = view === 'table' ? '#fff' : 'var(--text-sub)';
 
-    document.getElementById('gridControls').style.display = view === 'grid' ? 'block' : 'none';
-    document.getElementById('gridLegend').style.display = view === 'grid' ? 'flex' : 'none';
-    document.getElementById('listControls').style.display = view === 'list' ? 'block' : 'none';
-
-    reloadData();
+    document.getElementById('viewTimetable').style.display = view === 'timetable' ? 'block' : 'none';
+    document.getElementById('viewTable').style.display = view === 'table' ? 'block' : 'none';
 }
 
-function reloadData() {
-    const myId = document.getElementById('myUserId').value;
-    const sem = document.getElementById('filterSemester').value;
-    const sort = document.getElementById('sortOption').value;
+function buildBlockMap(schedules) {
+    const blocks = new Map();
+    const covered = new Set();
 
-    let url = `../../../backend/schedule/list_by_teacher.php?teacher_id=${myId}`;
+    schedules.forEach(s => {
+        const mIn = timeToMins(s.time_in);
+        const mOut = timeToMins(s.time_out);
+        if (mIn >= mOut || mIn < START_H * 60 || mOut > END_H * 60) return;
 
-    if (currentView === 'grid') {
-        if (sem) url += `&semester=${sem}`;
-    } else {
-        url += `&sort_by=${sort}`;
-    }
+        const totalSlots = (mOut - mIn) / SLOT_MIN;
+        if (totalSlots <= 0) return;
 
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const schedules = data.schedules || [];
-                if (schedules.length > 0) {
-                    document.getElementById('displaySY').innerText = schedules[0].school_year;
-                }
-                
-                if (currentView === 'grid') {
-                    renderGrid(schedules);
-                } else {
-                    renderList(schedules);
-                }
-            }
+        const h1 = Math.floor(mIn / 60); const min1 = mIn % 60;
+        const startKey = `${s.day_of_week}:${paddedTime(h1, min1)}`;
+
+        const isLES = s.schedule_type === 'LES';
+        let actSubj = isLES ? s.subject_name : s.coed_subject;
+        let actSec = isLES ? `${s.grade_name} - ${s.section_name}` : s.coed_grade_level;
+        let actRoom = isLES ? (s.room_name ? `${s.room_name} (${s.building_name})` : 'TBA') : (s.coed_room ? `${s.coed_room} (${s.coed_building || 'External'})` : 'TBA');
+
+        let labelHtml = `<strong>${escHtml(actSubj)}</strong><br><small>${escHtml(actSec)}</small><br><small style="opacity:0.8"><i class="fa-solid fa-door-open"></i> ${escHtml(actRoom)}</small>`;
+
+        blocks.set(startKey, {
+            type: s.schedule_type,
+            label: labelHtml,
+            span: totalSlots
         });
-}
 
-// ==========================================
-// 2. GRID RENDERING (UPDATED TO MATCH SECRETARY)
-// ==========================================
+        for (let i = 0; i < totalSlots; i++) {
+            const mCur = mIn + i * SLOT_MIN;
+            const hc = Math.floor(mCur / 60); const mc = mCur % 60;
+            covered.add(`${s.day_of_week}:${paddedTime(hc, mc)}`);
+        }
+    });
+
+    return { blocks, covered };
+}
 
 function renderGrid(schedules) {
-    const grid = document.getElementById('gridContent');
-    grid.innerHTML = '';
-    
-    // Draw Headers & Grid Lines (6 days + Saturday, 13 hours = 26 slots)
-    ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].forEach(h => {
-        const d = document.createElement('div');
-        d.className = 'grid-header-cell';
-        d.innerText = h;
-        grid.appendChild(d);
-    });
-
-    for(let i = 0; i < 26; i++) { // 13 hours * 2 (30-min slots)
-        const row = i + 2;
-        const line = document.createElement('div');
-        line.className = (i % 2 === 1) ? 'grid-bg-line hour-marker' : 'grid-bg-line';
-        line.style.gridColumn = '1/-1';
-        line.style.gridRow = row;
-        grid.appendChild(line);
-
-        if(i % 2 === 0) {
-            const time = document.createElement('div');
-            time.className = 'time-label';
-            time.innerText = formatHour(START_HOUR + i/2);
-            time.style.gridRow = row;
-            time.style.gridColumn = 1;
-            grid.appendChild(time);
-        }
-    }
-
-    // Place schedule blocks
-    schedules.forEach(s => {
-        const dayMap = {'Monday':2, 'Tuesday':3, 'Wednesday':4, 'Thursday':5, 'Friday':6, 'Saturday':7};
-        const col = dayMap[s.day_of_week];
-        if(!col) return;
-        
-        const start = ((parseInt(s.time_in.split(':')[0]) - START_HOUR) * 2) + (parseInt(s.time_in.split(':')[1]) >= 30 ? 1 : 0) + 2;
-        const end = ((parseInt(s.time_out.split(':')[0]) - START_HOUR) * 2) + (parseInt(s.time_out.split(':')[1]) >= 30 ? 1 : 0) + 2;
-        const duration = end - start;
-
-        if(start >= 2 && duration > 0) {
-            const el = document.createElement('div');
-            const isCoed = s.schedule_type === 'COED';
-            el.className = `schedule-block ${isCoed ? 'block-coed' : 'block-les'}`;
-            el.style.gridColumn = col;
-            el.style.gridRow = `${start} / span ${duration}`;
-            
-            const lockIcon = !isCoed ? '<i class="fa-solid fa-lock" style="float:right; font-size:10px;"></i>' : '';
-            el.innerHTML = `<strong>${escapeHtml(s.subject)}</strong> ${lockIcon}<br><small>${escapeHtml(s.room)}</small>`;
-            
-            if(isCoed) {
-                el.style.cursor = 'pointer';
-                el.onclick = () => openEditModal(s);
-            } else {
-                el.style.cursor = 'not-allowed';
-                el.onclick = () => alert('LOCKED: This is an LES schedule assigned by the Secretary.');
-            }
-            grid.appendChild(el);
-        }
-    });
-}
-
-// ==========================================
-// 3. LIST RENDERING
-// ==========================================
-
-function renderList(schedules) {
-    const tbody = document.getElementById('listContent');
-    if (schedules.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No schedules found.</td></tr>';
+    const grid = document.getElementById('plotGrid');
+    if (!schedules || schedules.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text-muted)">No schedules to display.</div>';
         return;
     }
 
-    tbody.innerHTML = schedules.map(s => {
-        const isCoed = s.schedule_type === 'COED';
-        const json = escapeHtml(JSON.stringify(s));
-        const actions = isCoed 
-            ? `<button onclick='triggerEdit(${json})' class="btn-edit-icon"><i class="fa-solid fa-pen"></i></button>`
-            : `<i class="fa-solid fa-lock" style="color:#aaa;"></i>`;
+    const { blocks, covered } = buildBlockMap(schedules);
 
-        return `
-            <tr>
-                <td><strong>${escapeHtml(s.subject)}</strong></td>
-                <td><span class="badge ${isCoed ? 'badge-coed' : 'badge-les'}">${s.schedule_type}</span></td>
-                <td>${s.day_of_week}<br><small>${formatTime(s.time_in)} - ${formatTime(s.time_out)}</small></td>
-                <td>${escapeHtml(s.room)}</td>
-                <td>${s.semester}</td>
-                <td>${actions}</td>
-            </tr>
-        `;
-    }).join('');
-}
+    const DAY_COL = {};
+    DAYS.forEach((d, i) => { DAY_COL[d] = i + 2; });
 
-// ==========================================
-// 4. CRUD LOGIC (UPDATED TO MATCH SECRETARY)
-// ==========================================
+    let html = '';
 
-function openAddModal() {
-    document.getElementById('modalTitle').innerText = 'Add COED Schedule';
-    document.getElementById('scheduleForm').reset();
-    document.getElementById('schedule_id').value = '';
-    document.getElementById('form_school_year').value = calculateSY();
-    
-    // Uncheck and enable all days
-    document.querySelectorAll('input[name="days[]"]').forEach(cb => {
-        cb.checked = false;
-        cb.disabled = false;
-    });
-    
-    document.getElementById('btnDelete').style.display = 'none';
-    document.getElementById('scheduleModal').style.display = 'block';
-}
-
-function openEditModal(s) {
-    document.getElementById('modalTitle').innerText = 'Edit COED Schedule';
-    document.getElementById('schedule_id').value = s.schedule_id;
-    
-    ['subject','units','class_type','time_in','time_out','room','course_year','school_year','semester'].forEach(f => {
-        const el = document.querySelector(`[name="${f}"]`);
-        if(el) el.value = s[f];
+    html += '<div class="g-day-hdr" style="grid-column:1;grid-row:1;border-right:1px solid #10b981"></div>';
+    DAYS.forEach(d => {
+        const col = DAY_COL[d];
+        html += `<div class="g-day-hdr" style="grid-column:${col};grid-row:1">${d}</div>`;
     });
 
-    // Check only the specific day, disable others
-    document.querySelectorAll('input[name="days[]"]').forEach(cb => {
-        cb.checked = (cb.value === s.day_of_week);
-        cb.disabled = !cb.checked;
-    });
+    for (let row = 0; row < TOTAL_ROWS; row++) {
+        const gridRow = row + 2;
+        const totalMins = START_H * 60 + row * SLOT_MIN;
+        const h1 = Math.floor(totalMins / 60), m1 = totalMins % 60;
+        const h2 = Math.floor((totalMins + SLOT_MIN) / 60), m2 = (totalMins + SLOT_MIN) % 60;
 
-    document.getElementById('btnDelete').style.display = 'inline-block';
-    document.getElementById('scheduleModal').style.display = 'block';
-}
+        html += `<div class="g-time" style="grid-column:1;grid-row:${gridRow}">${paddingTimeWithSecs(h1, m1)}–${paddingTimeWithSecs(h2, m2)}</div>`;
 
-function setupFormSubmission() {
-    const form = document.getElementById('scheduleForm');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const id = document.getElementById('schedule_id').value;
-        const formData = new FormData(this);
-        const days = [];
-        document.querySelectorAll('input[name="days[]"]:checked').forEach(cb => days.push(cb.value));
+        DAYS.forEach(d => {
+            const col = DAY_COL[d];
+            const key = `${d}:${paddedTime(h1, m1)}`;
 
-        if(days.length === 0) return alert("Select at least one day.");
-        
-        const btn = document.getElementById('btnSave');
-        const txt = btn.innerText;
-        btn.innerText = "Saving...";
-        btn.disabled = true;
+            const isBlock = blocks.has(key);
+            const isCovered = covered.has(key);
 
-        if(id) {
-            // UPDATE: Single schedule
-            formData.set('day_of_week', days[0]);
-            fetch('../../../backend/schedule/update.php', { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(d => {
-                    if(d.status === 'success') {
-                        closeModal();
-                        reloadData();
-                    } else {
-                        alert(d.message);
-                    }
-                })
-                .finally(() => {
-                    btn.innerText = txt;
-                    btn.disabled = false;
-                });
-        } else {
-            // CREATE: Loop for multiple days
-            const promises = days.map(day => {
-                const dData = new FormData(form);
-                dData.set('day_of_week', day);
-                return fetch('../../../backend/schedule/create.php', { method:'POST', body:dData }).then(r => r.json());
-            });
-            
-            Promise.all(promises).then(results => {
-                const errs = results.filter(r => r.status !== 'success');
-                if(errs.length > 0) {
-                    alert("Errors:\n" + errs.map(e => e.message).join('\n'));
-                } else {
-                    closeModal();
-                    reloadData();
-                }
-            }).finally(() => {
-                btn.innerText = txt;
-                btn.disabled = false;
-            });
-        }
-    });
-}
+            if (!isBlock && isCovered) return;
 
-function deleteSchedule() {
-    if(!confirm("Delete this schedule?")) return;
-    const fd = new FormData();
-    fd.append('schedule_id', document.getElementById('schedule_id').value);
-    fetch('../../../backend/schedule/delete.php', { method:'POST', body:fd })
-        .then(r => r.json())
-        .then(d => {
-            if(d.status === 'success') {
-                closeModal();
-                reloadData();
-            } else {
-                alert(d.message);
+            let cls = '', label = '', span = 1;
+
+            if (isBlock) {
+                const b = blocks.get(key);
+                cls = b.type === 'LES' ? 'occupied' : 'preview';
+                label = b.label;
+                span = b.span;
             }
+
+            const endGridRow = gridRow + span;
+            const pos = `grid-column:${col};grid-row:${gridRow}/${endGridRow}`;
+            const labelHtml = label ? `<div class="cl">${label}</div>` : '';
+            html += `<div class="g-cell${cls ? ' ' + cls : ''}" style="${pos}">${labelHtml}</div>`;
         });
+    }
+
+    grid.innerHTML = html;
 }
 
-// ==========================================
-// 5. UTILITIES
-// ==========================================
+async function loadSchedule() {
+    const sem = document.getElementById('fSem').value;
+    const body = document.getElementById('schedBody');
+    const wrap = document.getElementById('viewTimetable');
 
-function closeModal() {
-    document.getElementById('scheduleModal').style.display = 'none';
+    body.innerHTML = '<tr><td colspan="5" class="loading-text"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+
+    try {
+        const res = await fetch(`../../../backend/schedule/list.php?semester=${sem}`);
+        const json = await res.json();
+
+        if (json.status !== 'success') throw new Error(json.message);
+
+        const data = json.data;
+
+        if (!data || data.length === 0) {
+            body.innerHTML = '<tr class="no-data"><td colspan="5">No active schedules found.</td></tr>';
+            renderGrid([]);
+            return;
+        }
+
+        body.innerHTML = data.map(s => {
+            const isLES = s.schedule_type === 'LES';
+            const badge = isLES ? 'les-badge' : 'coed-badge';
+            const subj = isLES ? s.subject_name : s.coed_subject;
+            const sec = isLES ? `${s.grade_name} - ${s.section_name}` : s.coed_grade_level;
+            const roomLbl = isLES ? (s.room_name ? `${s.room_name} (${s.building_name})` : 'TBA') : (s.coed_room ? `${s.coed_room} (${s.coed_building || 'External'})` : 'TBA');
+            const dTr = `${s.day_of_week} | ${formatTime(s.time_in)} - ${formatTime(s.time_out)}<br><small style="color:var(--text-muted)"><i class="fa-solid fa-door-open"></i> ${roomLbl}</small>`;
+            const semLbl = s.semester == 1 ? '1st Sem' : '2nd Sem';
+
+            return `<tr>
+        <td><span class="custom-badge ${badge}">${s.schedule_type}</span></td>
+        <td><strong>${escHtml(subj)}</strong></td>
+        <td>${escHtml(sec)}</td>
+        <td>${dTr}</td>
+        <td>${semLbl}</td>
+      </tr>`;
+        }).join('');
+
+        renderGrid(data);
+
+    } catch (e) {
+        body.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
+        document.getElementById('plotGrid').innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:red">Failed to load timetable.</div>';
+    }
 }
 
-function triggerEdit(json) {
-    openEditModal(JSON.parse(json));
-}
-
-function calculateSY() {
-    const y = new Date().getFullYear();
-    return (new Date().getMonth() < 5) ? `${y-1}-${y}` : `${y}-${y+1}`;
-}
-
-function formatHour(h) {
-    return (h > 12 ? h - 12 : h) + ":00 " + (h >= 12 ? "PM" : "AM");
-}
-
-function formatTime(t) {
-    const [h, m] = t.split(':');
-    return parseInt(h) + ":" + m;
-}
-
-function escapeHtml(t) {
-    return t ? t.toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#039;','\"':'&quot;'}[m])) : '';
-}
-
-function printReport() {
-    const myId = document.getElementById('myUserId').value;
-    window.open(`report.php?teacher_id=${myId}`, '_blank');
-}
+document.addEventListener('DOMContentLoaded', loadSchedule);

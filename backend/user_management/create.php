@@ -1,48 +1,56 @@
 <?php
-require '../config/db.php';
-require '../config/functions.php';
+// backend/user_management/create.php
+header('Content-Type: application/json');
+require_once __DIR__ . '/../config/functions.php';
+requireRoleApi('admin');
 
-requireRole('principal'); 
-
-// Capture Inputs
-$role_id = $_POST['role_id'];
-$username = $_POST['username'];
-$first = $_POST['first_name'];
-$middle = $_POST['middle_name'] ?? '';
-$last = $_POST['last_name'];
-$email = $_POST['email'];
-$dept = $_POST['department'];
-// Teacher Specifics
-$rank = $_POST['academic_rank'] ?? null;
-$school = $_POST['school_college'] ?? null;
-
-$default_pass = "123456"; 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']); exit;
+}
 
 try {
-    // 1. Duplicate Check
-    $check = $pdo->prepare("SELECT user_id FROM user WHERE username = ?");
-    $check->execute([$username]);
-    if ($check->rowCount() > 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Username already taken.']);
-        exit;
+    $role_id    = (int)($_POST['role_id'] ?? 0);
+    $username   = trim($_POST['username'] ?? '');
+    $password   = $_POST['password'] ?? '';
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name  = trim($_POST['last_name'] ?? '');
+
+    if (!$role_id || !$username || !$password || !$first_name || !$last_name) {
+        throw new Exception("Required fields: role, username, password, first name, last name.");
+    }
+    if (strlen($password) < 6) {
+        throw new Exception("Password must be at least 6 characters.");
     }
 
-    // 2. Insert
-    $hash = password_hash($default_pass, PASSWORD_DEFAULT);
-    
-    $sql = "INSERT INTO user (role_id, username, password_hash, first_name, middle_name, last_name, email, department, academic_rank, school_college, is_active, date_created) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$role_id, $username, $hash, $first, $middle, $last, $email, $dept, $rank, $school]);
+    // Check valid role
+    $stmt = $pdo->prepare("SELECT role_id FROM role WHERE role_id = ?");
+    $stmt->execute([$role_id]);
+    if (!$stmt->fetch()) throw new Exception("Invalid role selected.");
 
-    // 3. Audit
-    $new_id = $pdo->lastInsertId();
-    logAudit($_SESSION['user_id'], "CREATED_USER", "Created user: $username ($first $last)");
+    // Check username uniqueness
+    $stmt = $pdo->prepare("SELECT user_id FROM user WHERE username = ?");
+    $stmt->execute([$username]);
+    if ($stmt->fetch()) throw new Exception("Username '$username' is already taken.");
 
-    echo json_encode(['status' => 'success', 'message' => 'User created successfully.']);
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare(
+        "INSERT INTO user (role_id, username, password_hash, first_name, middle_name, last_name,
+                           email, academic_rank, school_college, department)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    $stmt->execute([
+        $role_id, $username, $hash,
+        $first_name, trim($_POST['middle_name'] ?? '') ?: null, $last_name,
+        trim($_POST['email'] ?? '') ?: null,
+        trim($_POST['academic_rank'] ?? '') ?: null,
+        trim($_POST['school_college'] ?? '') ?: null,
+        trim($_POST['department'] ?? '') ?: null,
+    ]);
 
-} catch (PDOException $e) {
+    $newId = $pdo->lastInsertId();
+    logAudit($_SESSION['user_id'], 'CREATE_USER', "Created user #$newId: $first_name $last_name ($username)");
+    echo json_encode(['status' => 'success', 'user_id' => $newId]);
+} catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

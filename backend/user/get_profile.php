@@ -1,21 +1,20 @@
 <?php
-require '../config/db.php';
-require '../config/functions.php';
-
-$user_id = $_SESSION['user_id'];
-
+// backend/user/get_profile.php — All authenticated roles.
+header('Content-Type: application/json');
+require_once __DIR__ . '/../config/functions.php';
+requireRoleApi(['admin', 'principal', 'secretary', 'teacher']);
 try {
-    // UPDATED: Added middle_name, academic_rank, school_college
-    $stmt = $pdo->prepare("SELECT user_id, username, first_name, middle_name, last_name, email, academic_rank, school_college, department, role_id FROM user WHERE user_id = ?");
-    $stmt->execute([$user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user) {
-        echo json_encode(['status' => 'success', 'data' => $user]);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'User not found']);
-    }
-} catch (PDOException $e) {
+    $stmt = $pdo->prepare(
+        "SELECT u.user_id, u.username, u.first_name, u.middle_name, u.last_name,
+                u.email, u.academic_rank, u.school_college, u.department,
+                u.date_created, r.role_name
+         FROM user u JOIN role r ON u.role_id = r.role_id WHERE u.user_id = ?"
+    );
+    $stmt->execute([$_SESSION['user_id']]);
+    $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$profile) throw new Exception("Profile not found.");
+    echo json_encode(['status' => 'success', 'data' => $profile]);
+} catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

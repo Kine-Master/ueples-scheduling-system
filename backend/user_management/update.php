@@ -1,29 +1,46 @@
 <?php
-require '../config/db.php';
-require '../config/functions.php';
+// backend/user_management/update.php
+header('Content-Type: application/json');
+require_once __DIR__ . '/../config/functions.php';
+requireRoleApi('admin');
 
-requireRole('principal'); 
-
-$id = $_POST['user_id'];
-$first = $_POST['first_name'];
-$middle = $_POST['middle_name'] ?? '';
-$last = $_POST['last_name'];
-$email = $_POST['email'];
-$dept = $_POST['department'];
-$rank = $_POST['academic_rank'] ?? null;
-$school = $_POST['school_college'] ?? null;
-$role_id = $_POST['role_id']; // Principal can change roles
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']); exit;
+}
 
 try {
-    $sql = "UPDATE user SET first_name=?, middle_name=?, last_name=?, email=?, department=?, academic_rank=?, school_college=?, role_id=? WHERE user_id=?";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$first, $middle, $last, $email, $dept, $rank, $school, $role_id, $id]);
+    $user_id    = (int)($_POST['user_id'] ?? 0);
+    $role_id    = (int)($_POST['role_id'] ?? 0);
+    $first_name = trim($_POST['first_name'] ?? '');
+    $last_name  = trim($_POST['last_name'] ?? '');
 
-    logAudit($_SESSION['user_id'], "UPDATED_USER", "Updated info for User ID: $id");
+    if (!$user_id || !$role_id || !$first_name || !$last_name) {
+        throw new Exception("Required fields: user_id, role, first name, last name.");
+    }
 
-    echo json_encode(['status' => 'success', 'message' => 'User updated successfully.']);
+    // Prevent admin from demoting/removing their own role (safety guard)
+    if ($user_id === (int)$_SESSION['user_id'] && $role_id !== ROLE_ADMIN) {
+        throw new Exception("You cannot change your own role.");
+    }
 
-} catch (PDOException $e) {
+    $stmt = $pdo->prepare(
+        "UPDATE user SET role_id=?, first_name=?, middle_name=?, last_name=?,
+                         email=?, academic_rank=?, school_college=?, department=?
+         WHERE user_id=?"
+    );
+    $stmt->execute([
+        $role_id, $first_name,
+        trim($_POST['middle_name'] ?? '') ?: null, $last_name,
+        trim($_POST['email'] ?? '') ?: null,
+        trim($_POST['academic_rank'] ?? '') ?: null,
+        trim($_POST['school_college'] ?? '') ?: null,
+        trim($_POST['department'] ?? '') ?: null,
+        $user_id,
+    ]);
+
+    logAudit($_SESSION['user_id'], 'UPDATE_USER', "Updated user #$user_id: $first_name $last_name");
+    echo json_encode(['status' => 'success']);
+} catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

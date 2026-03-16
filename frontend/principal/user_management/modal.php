@@ -61,7 +61,6 @@
             </div>
 
             <div class="modal-actions">
-                <button type="button" onclick="closeModal()" class="btn-cancel">Cancel</button>
                 <button type="submit" class="btn-primary">Save User</button>
             </div>
         </form>

@@ -1,112 +1,75 @@
-/* frontend/teacher/dashboard/script.js */
+// frontend/teacher/dashboard/script.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Set Date immediately
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('currentDate').innerText = now.toLocaleDateString('en-US', options);
-    
-    // 2. Load Profile (For Name) & Stats
-    loadDashboardData();
-    loadProfileName();
-});
-
-function loadProfileName() {
-    // Re-use the existing user profile endpoint
-    fetch('../../../backend/user/get_profile.php')
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                document.getElementById('teacherName').innerText = data.data.first_name;
-            }
-        });
+function formatTime(time24) {
+    if (!time24) return '';
+    const [h, m] = time24.split(':');
+    const d = new Date(); d.setHours(h); d.setMinutes(m);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-function loadDashboardData() {
-    const tableBody = document.getElementById('todayTableBody');
-
-    fetch('../../../backend/dashboard/stats.php')
-        .then(res => res.json())
-        .then(res => {
-            if (res.status === 'success') {
-                const data = res.data;
-                const stats = data.stats;
-
-                // 1. Populate Cards
-                document.getElementById('totalSubjects').innerText = stats.total_subjects;
-                document.getElementById('todayCount').innerText = stats.today_count;
-                document.getElementById('currentDay').innerText = data.current_day; // e.g. "Monday"
-
-                // 2. Populate "Today's Schedule" Table
-                if (stats.todays_schedule.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="5" style="text-align:center; padding:30px; color:#999;">
-                                <i class="fa-solid fa-mug-hot" style="font-size:24px; margin-bottom:10px;"></i><br>
-                                No classes scheduled for today.
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tableBody.innerHTML = stats.todays_schedule.map(sched => {
-                        const isCoed = sched.schedule_type === 'COED';
-                        const badgeClass = isCoed ? 'coed' : 'les';
-                        const timeStr = formatTime(sched.time_in) + ' - ' + formatTime(sched.time_out);
-                        const status = getStatus(sched.time_in, sched.time_out);
-
-                        return `
-                            <tr>
-                                <td style="font-weight:bold; color:#555;">${timeStr}</td>
-                                <td>${escapeHtml(sched.subject)}</td>
-                                <td>${escapeHtml(sched.room)}</td>
-                                <td><span class="badge-pill ${badgeClass}">${sched.schedule_type}</span></td>
-                                <td>${status}</td>
-                            </tr>
-                        `;
-                    }).join('');
-                }
-            } else {
-                console.error("Dashboard Load Error:", res.message);
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            tableBody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Network Error loading dashboard.</td></tr>';
-        });
+function getTodayName() {
+    return new Date().toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-// UTILITIES
-function formatTime(timeStr) {
-    if (!timeStr) return '';
-    const [h, m] = timeStr.split(':');
-    let hour = parseInt(h);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12 || 12;
-    return `${hour}:${m} ${ampm}`;
-}
+async function loadDashboard() {
+    try {
+        // 1. Load Stats
+        const res = await fetch('../../../backend/dashboard/stats.php');
+        const json = await res.json();
+        if (json.status === 'success') {
+            const stats = json.data.teacher_stats;
+            document.getElementById('stClasses').textContent = stats.advisory_classes;
+            document.getElementById('stStudents').textContent = stats.total_students;
+            document.getElementById('stSchedules').textContent = stats.weekly_schedules;
+        }
 
-function getStatus(start, end) {
-    // Simple visual helper to see if class is upcoming or done
-    const now = new Date();
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-    
-    const [sH, sM] = start.split(':').map(Number);
-    const [eH, eM] = end.split(':').map(Number);
-    const startMins = sH * 60 + sM;
-    const endMins = eH * 60 + eM;
+        // 2. Load Today's Schedule
+        const day = getTodayName(); // e.g. "Monday"
+        const schedRes = await fetch('../../../backend/schedule/list.php'); // API filters internally by teacher_id from session if teacher
+        const schedJs = await schedRes.json();
 
-    if (currentMins > endMins) {
-        return '<span style="color:#aaa;"><span class="status-indicator status-done"></span> Done</span>';
-    } else if (currentMins >= startMins && currentMins <= endMins) {
-        return '<span style="color:#2ecc71; font-weight:bold;"><span class="status-indicator" style="background:#2ecc71;"></span> Ongoing</span>';
-    } else {
-        return '<span style="color:#3498db;"><span class="status-indicator status-upcoming"></span> Upcoming</span>';
+        const todayList = document.getElementById('todayList');
+        if (schedJs.status !== 'success') {
+            todayList.innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px">Failed to load schedule.</div>';
+            return;
+        }
+
+        const todayClasses = schedJs.data.filter(s => s.day_of_week === day).sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        if (todayClasses.length === 0) {
+            todayList.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:.9rem">
+        <i class="fa-regular fa-calendar-xmark" style="font-size:2rem;margin-bottom:12px;opacity:0.5;display:block"></i>
+        No classes scheduled for today (${day}).
+      </div>`;
+        } else {
+            todayList.innerHTML = todayClasses.map(s => {
+                const timeStr = `${formatTime(s.start_time)} - ${formatTime(s.end_time)}`;
+                const subjName = s.schedule_type === 'LES' ? s.subject_name : s.coed_subject_name;
+                const details = s.schedule_type === 'LES' ? s.section_name : s.coed_course_year;
+                const roomName = s.room_name || 'TBA';
+                const isLes = s.schedule_type === 'LES';
+
+                return `
+          <div style="background:rgba(255,255,255,.03);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-left:3px solid ${isLes ? '#38bdf8' : '#fbbf24'}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <strong style="color:var(--text);font-size:.95rem;display:block;margin-bottom:2px">${subjName}</strong>
+                <span style="font-size:.85rem;color:var(--text-sub)">${details}</span>
+              </div>
+              <span class="badge ${isLes ? 'badge-info' : 'badge-warning'}">${s.schedule_type}</span>
+            </div>
+            <div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);display:flex;gap:12px">
+              <span><i class="fa-regular fa-clock" style="color:var(--accent)"></i> ${timeStr}</span>
+              <span><i class="fa-solid fa-door-open" style="color:var(--text-muted)"></i> ${roomName}</span>
+            </div>
+          </div>
+        `;
+            }).join('');
+        }
+
+    } catch (e) {
+        document.getElementById('todayList').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px">Error connecting to server.</div>';
     }
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    return text.toString().replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-    });
-}
+document.addEventListener('DOMContentLoaded', loadDashboard);

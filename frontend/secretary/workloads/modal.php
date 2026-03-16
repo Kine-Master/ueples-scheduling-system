@@ -26,7 +26,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom:15px;">
-                <label class="form-label">Subject Code / Description</label>
+                <label class="form-label">Subject / Subject Code</label>
                 <input type="text" name="subject" required class="form-input" placeholder="e.g. MATH 101">
             </div>
 
@@ -81,7 +81,7 @@
                     <i class="fa-solid fa-trash"></i> Delete
                 </button>
                 <div style="margin-left:auto; display:flex; gap:10px;">
-                    <button type="button" onclick="closeModal()" style="background:none; border:1px solid #ccc; padding:8px 15px; border-radius:4px; cursor:pointer;">Cancel</button>
+                    <button type="button" onclick="closeModal()" style="background:#ff0000ff; color:white; border:none; padding:8px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">Cancel</button>
                     <button type="submit" id="btnSave" style="background:#2ecc71; color:white; border:none; padding:8px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">Save</button>
                 </div>
             </div>

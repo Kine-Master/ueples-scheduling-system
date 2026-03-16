@@ -5,6 +5,23 @@ requireRole('principal');
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function(){
+      var t = localStorage.getItem('ueples_theme') || 'dark';
+      document.documentElement.dataset.theme = t;
+      window.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+      });
+    })();
+    function toggleTheme() {
+      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('ueples_theme', next);
+      var btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
     <title>Principal - Archive Monitoring</title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="style.css">
@@ -27,7 +44,8 @@ requireRole('principal');
             <a href="../../../backend/auth/logout.php" class="btn-logout">
                 <i class="fa-solid fa-right-from-bracket"></i> Logout
             </a>
-        </nav>
+            <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+  </nav>
     </header>
 
     <main class="main-content-centered">

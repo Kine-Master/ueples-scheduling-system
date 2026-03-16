@@ -17,30 +17,26 @@ $stmt->execute([$teacher_id]);
 $teacher = $stmt->fetch();
 
 // 4. BUILD DYNAMIC QUERY
-// Base: Active schedules for this teacher
 $sql = "SELECT * FROM schedule WHERE teacher_id = ? AND is_active = 1";
 $params = [$teacher_id];
 
-// Apply Semester Filter
 if (!empty($semester_filter)) {
     $sql .= " AND semester = ?";
     $params[] = $semester_filter;
 }
 
-// Apply School Year Filter
 if (!empty($school_year_filter)) {
     $sql .= " AND school_year = ?";
     $params[] = $school_year_filter;
 }
 
-$sql .= " ORDER BY schedule_type DESC, subject ASC";
+$sql .= " ORDER BY schedule_type DESC, subject ASC, day_of_week ASC";
 
 $schedStmt = $pdo->prepare($sql);
 $schedStmt->execute($params);
 $schedules = $schedStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 5. DYNAMIC HEADER INFO
-// Priority: Filter Value -> Data Value -> Default
 $displaySY = !empty($school_year_filter) 
     ? $school_year_filter 
     : (count($schedules) > 0 ? $schedules[0]['school_year'] : (date('Y') . "-" . (date('Y')+1)));
@@ -60,7 +56,59 @@ $pStmt->execute();
 $principal = $pStmt->fetch();
 $principal_name = $principal ? strtoupper($principal['first_name'] . ' ' . $principal['last_name']) : "PRINCIPAL NOT ASSIGNED";
 
-// HELPER
+// 7. GROUP SCHEDULES BY SUBJECT + TIME
+$grouped = [];
+$totalHoursGlobal = 0;
+
+foreach($schedules as $s) {
+    // Group by subject + class_type + time (subjects with same time are grouped together)
+    $key = $s['subject'] . '_' . $s['class_type'] . '_' . $s['time_in'] . '_' . $s['time_out'];
+    
+    if(!isset($grouped[$key])) {
+        $grouped[$key] = [
+            'subject' => $s['subject'],
+            'class_type' => $s['class_type'],
+            'units' => $s['units'],
+            'time_in' => $s['time_in'],
+            'time_out' => $s['time_out'],
+            'schedule_type' => $s['schedule_type'],
+            'course_year' => $s['course_year'],
+            'days' => [],
+            'rooms' => [],
+            'total_hours' => 0
+        ];
+    }
+    
+    // Calculate hours for this meeting
+    $hours = calculateHours($s['time_in'], $s['time_out']);
+    $totalHoursGlobal += $hours;
+    $grouped[$key]['total_hours'] += $hours;
+    
+    // Add day and room to the group
+    $grouped[$key]['days'][] = $s['day_of_week'];
+    $grouped[$key]['rooms'][] = $s['room'];
+}
+
+// 8. CALCULATE TOTALS (Count units only ONCE per unique subject+classtype combination)
+$countedSubjects = [];
+$totalLec = 0;
+$totalLab = 0;
+
+foreach($grouped as $group) {
+    $subjectKey = $group['subject'] . '_' . $group['class_type'];
+    
+    // Only count units once per subject+type combination
+    if(!isset($countedSubjects[$subjectKey])) {
+        if($group['class_type'] === 'Lecture') {
+            $totalLec += $group['units'];
+        } else if($group['class_type'] === 'Laboratory') {
+            $totalLab += $group['units'];
+        }
+        $countedSubjects[$subjectKey] = true;
+    }
+}
+
+// HELPER FUNCTION
 function calculateHours($in, $out) {
     $start = strtotime($in);
     $end = strtotime($out);
@@ -70,6 +118,23 @@ function calculateHours($in, $out) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function(){
+      var t = localStorage.getItem('ueples_theme') || 'dark';
+      document.documentElement.dataset.theme = t;
+      window.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+      });
+    })();
+    function toggleTheme() {
+      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('ueples_theme', next);
+      var btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
     <meta charset="UTF-8">
     <title>My Workload - <?= e($teacher['last_name']) ?></title>
     <style>
@@ -92,11 +157,9 @@ function calculateHours($in, $out) {
         .workload-table th { font-weight: bold; text-transform: uppercase; height: 40px; }
         
         /* Column Widths */
-        .col-subject { width: 15%; }
-        .col-title { width: 25%; }
-        .col-units { width: 5%; }
-        .col-time { width: 12%; }
-        .col-days { width: 8%; }
+        .col-subject { width: 18%; }
+        .col-units { width: 8%; }
+        .col-time { width: 10%; }
         
         /* Footer/Signatures */
         .signatures { margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; }
@@ -132,66 +195,50 @@ function calculateHours($in, $out) {
     <table class="workload-table">
         <thead>
             <tr>
-                <th rowspan="2" class="col-subject">SUBJECT</th> <th rowspan="2" class="col-title">DESCRIPTIVE TITLE</th>
-                <th rowspan="2">CLASS ID</th> <th colspan="2">UNITS</th>
-                <th rowspan="2" class="col-time">TIME</th>
-                <th rowspan="2" class="col-days">DAYS</th>
-                <th rowspan="2">HOURS<br>PER WEEK</th>
-                <th rowspan="2">ROOM</th>
-                <th rowspan="2">COURSE/YEAR</th>
-            </tr>
-            <tr>
-                <th class="col-units">LEC</th>
-                <th class="col-units">LAB</th>
+                <th class="col-subject">SUBJECT</th>
+                <th class="col-units">UNITS</th>
+                <th>CLASS TYPE</th>
+                <th>DAY</th>
+                <th>TIME IN</th>
+                <th>TIME OUT</th>
+                <th>ROOM</th>
+                <th>GRADE/SECTION</th>
             </tr>
         </thead>
         <tbody>
             <?php 
-            $totalLec = 0;
-            $totalLab = 0;
-            $totalHours = 0;
-
-            $rowCount = max(count($schedules), 8);
-
+            $rowCount = max(count($grouped), 8);
+            $groupArray = array_values($grouped);
+            
             for($i = 0; $i < $rowCount; $i++):
-                if(isset($schedules[$i])):
-                    $s = $schedules[$i];
-                    $lec = ($s['class_type'] === 'Lecture') ? $s['units'] : '';
-                    $lab = ($s['class_type'] === 'Laboratory') ? $s['units'] : '';
+                if(isset($groupArray[$i])):
+                    $g = $groupArray[$i];
                     
-                    if(is_numeric($lec)) $totalLec += $lec;
-                    if(is_numeric($lab)) $totalLab += $lab;
-                    
-                    $hours = calculateHours($s['time_in'], $s['time_out']);
-                    $totalHours += $hours;
-
-                    $marker = ($s['schedule_type'] == 'COED') ? ' (COED)' : '';
+                    // Combine days and rooms
+                    $daysStr = implode(', ', $g['days']);
+                    $roomsStr = implode(', ', array_unique($g['rooms']));
             ?>
             <tr>
-                <td><?= e($s['subject']) ?></td>
-                <td><?= e($s['subject']) . $marker ?></td> 
-                <td><?= $s['schedule_id'] ?></td>
-                <td><?= $lec ?></td>
-                <td><?= $lab ?></td>
-                <td><?= date('h:i A', strtotime($s['time_in'])) . '-' . date('h:i A', strtotime($s['time_out'])) ?></td>
-                <td><?= e($s['day_of_week']) ?></td>
-                <td><?= $hours ?></td>
-                <td><?= e($s['room']) ?></td>
-                <td><?= e($s['course_year']) ?></td>
+                <td><?= e($g['subject']) ?></td>
+                <td><?= $g['units'] ?></td>
+                <td><?= e($g['class_type']) ?></td>
+                <td><?= $daysStr ?></td>
+                <td><?= date('h:i A', strtotime($g['time_in'])) ?></td>
+                <td><?= date('h:i A', strtotime($g['time_out'])) ?></td>
+                <td><?= $roomsStr ?></td>
+                <td><?= e($g['course_year']) ?></td>
             </tr>
             <?php else: ?>
             <tr>
-                <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             </tr>
             <?php endif; endfor; ?>
 
             <tr style="font-weight:bold; background-color:#f0f0f0;">
-                <td colspan="3" style="text-align:right; padding-right:10px;">TOTAL</td>
-                <td><?= $totalLec ?: '-' ?></td>
-                <td><?= $totalLab ?: '-' ?></td>
-                <td colspan="2"></td>
-                <td><?= $totalHours ?></td>
-                <td colspan="2"></td>
+                <td style="text-align:right; padding-right:10px;">TOTAL UNITS:</td>
+                <td colspan="2">Lec: <?= $totalLec ?: '-' ?> | Lab: <?= $totalLab ?: '-' ?></td>
+                <td colspan="2" style="text-align:right; padding-right:10px;">TOTAL HOURS/WEEK:</td>
+                <td colspan="3"><?= number_format($totalHoursGlobal, 2) ?></td>
             </tr>
         </tbody>
     </table>
