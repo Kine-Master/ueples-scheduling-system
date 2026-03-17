@@ -2,22 +2,28 @@
 
 A Path-to-Premium Web-Based Faculty Workload & Scheduling System designed for the Laboratory Elementary School (LES). This system automates class scheduling, workload reporting, and conflict detection with a modern, high-end user interface.
 
-## 🚀 Key Features
+## 🚀 Role-Based Features
 
-### 👤 Principal (Administrator)
-* **Live Tracking Board:** real-time monitoring of active classes, teachers, and room utilization.
-* **Dashboard Analytics:** Visual insights into faculty distribution and scheduling efficiency.
-* **Audit logs & archives:** complete history of user actions and historical data.
+### 💻 System Administrator
+* **User Management:** Full control over account creation, role assignment, and password resets.
+* **Audit Logs:** Monitor all system activities (logins, updates, deletions) with IP tracking.
+* **System Archives:** Manage historical schedule data and cleanup thresholds.
 
-### 📝 Secretary (Scheduler)
-* **Unified Schedule Creation:** A streamlined interface for both LES (editable) and COED (read-only) schedules.
-* **Real-time conflict detection:** instant visual feedback for overlapping time slots or room double-bookings.
-* **Automated reports:** one-click generation of printable faculty workload reports with signature blocks.
-* **Flattened Master Data:** direct access to curriculum, subjects, and room management.
+### 👤 School Principal
+* **Read-Only Oversight:** Monitor school operations without risk of data modification.
+* **Live Tracking Board:** Real-time visibility into active classes, faculty locations, and room status.
+* **Analytics Dashboard:** Visual insights into faculty distribution and system-wide scheduling.
 
-### 👨‍🏫 Teacher (Faculty)
-* **Personalized Dashboard:** quick view of the current semester's schedule.
-* **Responsive View:** optimized for mobile and desktop access.
+### 📝 School Secretary
+* **Primary Scheduler:** Full management of **LES** (internal) and **COED** (external) schedules.
+* **Master Data Management:** Maintain buildings, rooms, curricula, and academic subjects.
+* **Conflict Detection:** Real-time automated validation for time, teacher, and room overlaps.
+* **Report Generation:** Export and print professional faculty workload reports.
+
+### 👨‍🏫 Faculty Teacher
+* **Classroom Management:** Manage student lists and enrollment for assigned LES sections.
+* **Personalized Schedule:** Quick access to personal workload and class timetables.
+* **Responsive Dashboard:** View schedules on any device (mobile/desktop).
 
 ---
 
@@ -65,6 +71,7 @@ git clone https://github.com/Kine-Master/ueples-scheduling-system.git ueples
 ### 🔑 Default Credentials
 | Role | Username | Password |
 | :--- | :--- | :--- |
+| **Admin** | `admin` | `password123` |
 | **Principal** | `principal` | `password123` |
 | **Secretary** | `secretary` | `password123` |
 | **Teacher** | `teacher` | `password123` |
