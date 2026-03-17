@@ -1,40 +1,17 @@
-<?php
+﻿<?php
 require_once '../../../backend/config/functions.php';
 requireRole('secretary');
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('ueples_theme') || 'dark';
-      document.documentElement.dataset.theme = t;
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('themeBtn');
-        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-      });
-    })();
-    function toggleTheme() {
-      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('ueples_theme', next);
-      var btn = document.getElementById('themeBtn');
-      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-    }
-  </script>
+  <script src="../../assets/js/theme.js"></script>
+  
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Create LES Schedule — Admin</title>
+  <title>Create LES Schedule — Secretary</title>
   <link rel="stylesheet" href="../../assets/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root{--accent:#fbbf24;--accent-bg:rgba(245,158,11,.12)}
-    .nav-dropdown{position:relative;display:inline-block}
-    .nav-dropbtn{padding:7px 14px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:500;color:var(--text-sub);transition:all var(--transition);display:flex;align-items:center;gap:6px}
-    .nav-dropbtn:hover,.nav-dropdown:hover .nav-dropbtn{background:rgba(255,255,255,.05);color:var(--text)}
-    .nav-dropdown-content{display:none;position:absolute;top:100%;left:0;background:var(--bg-card);min-width:200px;box-shadow:var(--shadow-lg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:200;padding:8px 0;margin-top:5px}
-    .nav-dropdown-content a{display:block;padding:10px 16px;font-size:.85rem;color:var(--text);border-radius:0}
-    .nav-dropdown-content a:hover{background:var(--accent-bg);color:var(--accent)}
-    .nav-dropdown:hover .nav-dropdown-content{display:block;animation:dropIn .2s ease}
-    @keyframes dropIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
     
     .wizard-container{display:grid;grid-template-columns:1fr 340px;gap:24px;}
     @media (max-width:800px) { .wizard-container{grid-template-columns:1fr;} }
@@ -47,24 +24,17 @@ requireRole('secretary');
 
 <header class="main-header">
   <div class="brand"><i class="fa-solid fa-calendar-days"></i><span>SECRETARY PORTAL<small class="brand-sub">UEP LES System</small></span></div>
-  <nav class="top-nav">
-    
-    <div class="nav-dropdown">
-      <a href="#" class="nav-dropbtn"><i class="fa-solid fa-database"></i> Master Data <i class="fa-solid fa-chevron-down" style="font-size:.7rem;margin-left:4px"></i></a>
-      <div class="nav-dropdown-content">
-        <a href="../master_data/school_year/index.php">School Years</a>
-        <a href="../master_data/curriculum/index.php">Curricula</a>
-        <a href="../master_data/subject/index.php">Subjects</a>
-        <a href="../master_data/building_room/index.php">Buildings & Rooms</a>
-        <a href="../master_data/class_section/index.php">Class Sections</a>
-        <a href="../master_data/teacher_subject/index.php">Teacher Specialties</a>
-      </div>
-    </div>
-
-    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> Schedules</a>
-    <a href="../profile/index.php"><i class="fa-solid fa-user-circle"></i> Profile</a>
-    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-      <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+    <nav class="top-nav">
+    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> <span>Schedules</span></a>
+    <a href="../master_data/school_year/index.php"><i class="fa-solid fa-calendar"></i> <span>School Years</span></a>
+    <a href="../master_data/curriculum/index.php"><i class="fa-solid fa-book"></i> <span>Curricula</span></a>
+    <a href="../master_data/subject/index.php"><i class="fa-solid fa-book-open"></i> <span>Subjects</span></a>
+    <a href="../master_data/building_room/index.php"><i class="fa-solid fa-building"></i> <span>Buildings &amp; Rooms</span></a>
+    <a href="../master_data/class_section/index.php"><i class="fa-solid fa-users-rectangle"></i> <span>Sections</span></a>
+    <a href="../master_data/teacher_subject/index.php"><i class="fa-solid fa-tags"></i> <span>Specialties</span></a>
+    <a href="../profile/index.php"><i class="fa-solid fa-user-circle"></i> <span>Profile</span></a>
+    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
+    <button class="theme-btn" id="themeBtn" title="Toggle theme"></button>
   </nav>
 </header>
 
@@ -87,16 +57,16 @@ requireRole('secretary');
           
           <div class="form-group">
             <label class="form-label">Subject <span>*</span></label>
-            <select class="form-control" id="fSubj" required onchange="checkTeacherAvailability()"><option value="">Select subject…</option></select>
+            <select class="form-control" id="fSubj" required onchange="checkTeacherAvailability()"><option value="">Select subjectâ€¦</option></select>
           </div>
           
           <div class="form-group">
             <label class="form-label">Class Section <span>*</span></label>
-            <select class="form-control" id="fSec" required><option value="">Select section…</option></select>
+            <select class="form-control" id="fSec" required><option value="">Select sectionâ€¦</option></select>
           </div>
           
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Teacher <span>*</span></label><select class="form-control" id="fTeacher" required><option value="">Select teacher…</option></select></div>
+            <div class="form-group"><label class="form-label">Teacher <span>*</span></label><select class="form-control" id="fTeacher" required><option value="">Select teacherâ€¦</option></select></div>
             <div class="form-group"><label class="form-label">Semester <span>*</span></label><select class="form-control" id="fSem" required><option value="1">1st Semester</option><option value="2">2nd Semester</option></select></div>
           </div>
           
@@ -105,12 +75,12 @@ requireRole('secretary');
           <div class="form-row">
             <div class="form-group">
                <label class="form-label">Room <span>*</span></label>
-               <select class="form-control" id="fRoom" required onchange="fetchRoomSlots()"><option value="">Select room…</option></select>
+               <select class="form-control" id="fRoom" required onchange="fetchRoomSlots()"><option value="">Select roomâ€¦</option></select>
             </div>
             <div class="form-group">
                <label class="form-label">Day of Week <span>*</span></label>
                <select class="form-control" id="fDay" required onchange="fetchRoomSlots()">
-                 <option value="">Select day…</option>
+                 <option value="">Select dayâ€¦</option>
                  <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option>
                </select>
             </div>

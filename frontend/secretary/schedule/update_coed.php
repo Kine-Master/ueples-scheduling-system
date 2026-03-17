@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../../../backend/config/functions.php';
 requireRole('secretary');
 
@@ -7,25 +7,10 @@ if (!$schedule_id) { header("Location: index.php"); exit; }
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('ueples_theme') || 'dark';
-      document.documentElement.dataset.theme = t;
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('themeBtn');
-        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-      });
-    })();
-    function toggleTheme() {
-      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('ueples_theme', next);
-      var btn = document.getElementById('themeBtn');
-      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-    }
-  </script>
+  <script src="../../assets/js/theme.js"></script>
+  
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Edit COED Schedule — Admin</title>
+  <title>Edit COED Schedule — Secretary</title>
   <link rel="stylesheet" href="../../assets/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
@@ -40,7 +25,7 @@ if (!$schedule_id) { header("Location: index.php"); exit; }
 <body class="page-body">
 <header class="main-header">
   <div class="brand"><i class="fa-solid fa-calendar-days"></i><span>SECRETARY PORTAL</span></div>
-  <nav class="top-nav"><a href="../dashboard/index.php">Dashboard</a><a href="index.php">Schedules</a><a href="../../../backend/auth/logout.php" class="btn-logout">Logout</a>    <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+  <nav class="top-nav"><a href="../dashboard/index.php">Dashboard</a><a href="index.php">Schedules</a><a href="../../../backend/auth/logout.php" class="btn-logout">Logout</a>    <button class="theme-btn" id="themeBtn" title="Toggle theme"></button>
   </nav>
 </header>
 

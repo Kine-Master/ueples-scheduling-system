@@ -1,9 +1,11 @@
-<?php
+﻿<?php
 require_once '../../../backend/config/functions.php';
 requireRole('secretary');
 ?><!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+  <script src="../../assets/js/theme.js"></script>
+  
   <script>document.documentElement.dataset.theme=localStorage.getItem('ueples_theme')||'dark';</script>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>New Schedule — Secretary</title>
@@ -11,23 +13,15 @@ requireRole('secretary');
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root{--accent:#fbbf24;--accent-bg:rgba(245,158,11,.12)}
-    .nav-dropdown{position:relative;display:inline-block}
-    .nav-dropbtn{padding:7px 14px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:500;color:var(--text-sub);transition:all var(--t);display:flex;align-items:center;gap:6px}
-    .nav-dropbtn:hover,.nav-dropdown:hover .nav-dropbtn{background:rgba(128,128,128,.08);color:var(--text)}
-    .nav-dropdown-content{display:none;position:absolute;top:100%;left:0;background:var(--bg-card);min-width:200px;box-shadow:var(--shadow-lg);border:1px solid var(--border);border-radius:var(--radius-sm);z-index:200;padding:8px 0;margin-top:5px}
-    .nav-dropdown-content a{display:block;padding:10px 16px;font-size:.85rem;color:var(--text)}
-    .nav-dropdown-content a:hover{background:var(--accent-bg);color:var(--accent)}
-    .nav-dropdown:hover .nav-dropdown-content{display:block;animation:dropIn .2s ease}
-    @keyframes dropIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 
-    /* ── Page layout ─────────────────────── */
+    /* ── Page layout ──────────────────────â”€ */
     .plot-page{padding:18px 20px;height:calc(100vh - var(--nav-h));display:flex;flex-direction:column;gap:14px;overflow:hidden}
     .plot-page-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
     .plot-page-hdr h2{font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
     .plot-page-hdr h2 a{color:var(--text-sub);font-size:1rem}
     .plot-page-hdr h2 a:hover{color:var(--text)}
 
-    /* ── Workspace ───────────────────────── */
+    /* ── Workspace ────────────────────────â”€ */
     .plot-workspace{display:flex;gap:16px;flex:1;min-height:0;align-items:flex-start}
 
     /* ── Left accordion panel ────────────── */
@@ -54,7 +48,7 @@ requireRole('secretary');
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .form-check{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--text-sub);cursor:pointer;padding-top:4px}
 
-    /* ── Right timetable ─────────────────── */
+    /* ── Right timetable ──────────────────â”€ */
     .plot-right{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;gap:12px;overflow:hidden}
     .plot-legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--text);padding:10px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);flex-shrink:0}
     .legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;display:inline-block}
@@ -78,7 +72,7 @@ requireRole('secretary');
 
     .g-cell .cl{font-size:.7rem;font-weight:700;text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 
-    /* ── Error box ───────────────────────── */
+    /* ── Error box ────────────────────────â”€ */
     .err-box{display:none;padding:10px 12px;background:var(--danger-bg);color:var(--danger);border-radius:var(--radius-sm);border-left:3px solid var(--danger);font-size:.82rem;margin-bottom:8px}
 
     /* ── Submit btn ──────────────────────── */
@@ -90,21 +84,16 @@ requireRole('secretary');
 <header class="main-header">
   <div class="brand"><i class="fa-solid fa-calendar-days"></i><span>SECRETARY PORTAL<small class="brand-sub">UEP LES System</small></span></div>
   <nav class="top-nav">
-    <div class="nav-dropdown">
-      <a href="#" class="nav-dropbtn"><i class="fa-solid fa-database"></i> Master Data <i class="fa-solid fa-chevron-down" style="font-size:.7rem;margin-left:4px"></i></a>
-      <div class="nav-dropdown-content">
-        <a href="../master_data/school_year/index.php">School Years</a>
-        <a href="../master_data/curriculum/index.php">Curricula</a>
-        <a href="../master_data/subject/index.php">Subjects</a>
-        <a href="../master_data/building_room/index.php">Buildings &amp; Rooms</a>
-        <a href="../master_data/class_section/index.php">Class Sections</a>
-        <a href="../master_data/teacher_subject/index.php">Teacher Specialties</a>
-      </div>
-    </div>
-    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> Schedules</a>
-    <a href="../profile/index.php"><i class="fa-solid fa-user-circle"></i> Profile</a>
-    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-    <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> <span>Schedules</span></a>
+    <a href="../master_data/school_year/index.php"><i class="fa-solid fa-calendar"></i> <span>School Years</span></a>
+    <a href="../master_data/curriculum/index.php"><i class="fa-solid fa-book"></i> <span>Curricula</span></a>
+    <a href="../master_data/subject/index.php"><i class="fa-solid fa-book-open"></i> <span>Subjects</span></a>
+    <a href="../master_data/building_room/index.php"><i class="fa-solid fa-building"></i> <span>Buildings &amp; Rooms</span></a>
+    <a href="../master_data/class_section/index.php"><i class="fa-solid fa-users-rectangle"></i> <span>Sections</span></a>
+    <a href="../master_data/teacher_subject/index.php"><i class="fa-solid fa-tags"></i> <span>Specialties</span></a>
+    <a href="../profile/index.php"><i class="fa-solid fa-user-circle"></i> <span>Profile</span></a>
+    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
+    <button class="theme-btn" id="themeBtn" title="Toggle theme"></button>
   </nav>
 </header>
 
@@ -117,7 +106,7 @@ requireRole('secretary');
 
   <div class="plot-workspace">
 
-    <!-- ───── LEFT: Accordion Field Panel ───── -->
+    <!-- ────â”€ LEFT: Accordion Field Panel ────â”€ -->
     <div class="acc-panel" id="accPanel">
 
       <!-- 1. Type -->
@@ -146,7 +135,7 @@ requireRole('secretary');
           <div class="form-group">
             <label class="form-label">School Year <span>*</span></label>
             <select class="form-control" id="fSy" onchange="stepCompleted('sy')">
-              <option value="">Loading…</option>
+              <option value="">Loadingâ€¦</option>
             </select>
           </div>
           <div class="form-group">
@@ -169,7 +158,7 @@ requireRole('secretary');
           <div class="form-group">
             <label class="form-label">Teacher <span>*</span></label>
             <select class="form-control" id="fTeacher" onchange="stepCompleted('teacher')">
-              <option value="">Select teacher…</option>
+              <option value="">Select teacherâ€¦</option>
             </select>
           </div>
           <label class="form-check" id="specialistToggleWrap">
@@ -243,7 +232,7 @@ requireRole('secretary');
           <div class="form-group" id="grp-room-sel">
             <label class="form-label">Building / Room <span>*</span></label>
             <select class="form-control" id="fRoom" onchange="stepCompleted('room')">
-              <option value="">Select room…</option>
+              <option value="">Select roomâ€¦</option>
             </select>
           </div>
           <div class="form-group" id="grp-room-txt" style="display:none">
@@ -290,9 +279,9 @@ requireRole('secretary');
       </div>
 
     </div>
-    <!-- ───── END Left Panel ───── -->
+    <!-- ────â”€ END Left Panel ────â”€ -->
 
-    <!-- ───── RIGHT: Timetable ───── -->
+    <!-- ────â”€ RIGHT: Timetable ────â”€ -->
     <div class="plot-right">
       <div class="plot-legend">
         <span class="legend-item"><span class="legend-dot" style="background:var(--cell-teacher)"></span> Occupied Class</span>

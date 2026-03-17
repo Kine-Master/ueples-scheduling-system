@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require '../../../backend/config/db.php';
 require '../../../backend/config/functions.php';
 requireRole('secretary');
@@ -131,23 +131,8 @@ function calculateHours($in, $out) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('ueples_theme') || 'dark';
-      document.documentElement.dataset.theme = t;
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('themeBtn');
-        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-      });
-    })();
-    function toggleTheme() {
-      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('ueples_theme', next);
-      var btn = document.getElementById('themeBtn');
-      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-    }
-  </script>
+  <script src="../../assets/js/theme.js"></script>
+  
     <meta charset="UTF-8">
     <title>Workload Report - <?= e($teacher['last_name']) ?></title>
     <style>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../../../backend/config/functions.php';
 requireRole('secretary');
 
@@ -10,25 +10,10 @@ if (!$schedule_id) {
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('ueples_theme') || 'dark';
-      document.documentElement.dataset.theme = t;
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('themeBtn');
-        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-      });
-    })();
-    function toggleTheme() {
-      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('ueples_theme', next);
-      var btn = document.getElementById('themeBtn');
-      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-    }
-  </script>
+  <script src="../../assets/js/theme.js"></script>
+  
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Edit LES Schedule — Admin</title>
+  <title>Edit LES Schedule — Secretary</title>
   <link rel="stylesheet" href="../../assets/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
@@ -45,9 +30,9 @@ if (!$schedule_id) {
 <header class="main-header">
   <div class="brand"><i class="fa-solid fa-calendar-days"></i><span>SECRETARY PORTAL<small class="brand-sub">UEP LES System</small></span></div>
   <nav class="top-nav">
-    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> Schedules</a>
-    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-      <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+    <a href="index.php" class="active"><i class="fa-solid fa-table-cells"></i> <span>Schedules</span></a>
+    <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
+      <button class="theme-btn" id="themeBtn" title="Toggle theme"></button>
   </nav>
 </header>
 

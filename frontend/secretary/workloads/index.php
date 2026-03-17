@@ -1,27 +1,12 @@
-<?php
+﻿<?php
 require '../../../backend/config/functions.php';
 requireRole('secretary');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('ueples_theme') || 'dark';
-      document.documentElement.dataset.theme = t;
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('themeBtn');
-        if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-      });
-    })();
-    function toggleTheme() {
-      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('ueples_theme', next);
-      var btn = document.getElementById('themeBtn');
-      if(btn) btn.textContent = next === 'dark' ? '🌙' : '☀️';
-    }
-  </script>
+  <script src="../../assets/js/theme.js"></script>
+  
     <title>Workload Management</title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="style.css">
@@ -38,10 +23,9 @@ requireRole('secretary');
             <a href="index.php" class="active">Workloads</a>
             <a href="../archive/index.php">Archives</a>
             <a href="../profile/index.php">Profile</a>
-            <a href="../../../backend/auth/logout.php" class="btn-logout">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
-            </a>
-            <button class="theme-btn" id="themeBtn" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+            <a href="../../../backend/auth/logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout
+            </span></a>
+            <button class="theme-btn" id="themeBtn" title="Toggle theme"></button>
   </nav>
     </header>
 
