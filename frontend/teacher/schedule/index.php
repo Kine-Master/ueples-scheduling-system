@@ -41,8 +41,10 @@ requireRole('teacher');
     .g-cell.conflict .cl{color:var(--text);font-weight:700}
     .g-cell.preview{background:var(--cell-preview);border-left:3px solid var(--cell-preview-b)}
     .g-cell.preview .cl{color:var(--text);font-weight:700}
+    .g-cell.coed{background:var(--cell-coed);border-left:3px solid var(--cell-coed-b)}
+    .g-cell.coed .cl{color:var(--text);font-weight:700}
 
-    .g-cell .cl{font-size:.7rem;font-weight:700;text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+    .g-cell .cl{font-size:.68rem;font-weight:700;text-align:center;line-height:1.25;display:block;white-space:normal;overflow:visible;word-break:break-word}
   </style>
 </head>
 <body class="page-body">
@@ -62,10 +64,12 @@ requireRole('teacher');
   <div class="page-header">
     <div class="page-header-text"><h2><i class="fa-solid fa-calendar-day" style="color:var(--accent)"></i> My Weekly Schedule</h2><p>Overview of all assigned LES and COED classes.</p></div>
     <div class="right" style="display:flex; gap:12px; align-items:center;">
+        <a class="btn btn-secondary" id="printScheduleBtn" target="_blank" href="report.php"><i class="fa-solid fa-print"></i> Print Schedule</a>
         <div class="view-toggle" style="display:flex;background:var(--bg-hover);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)">
           <button class="btn view-btn active" id="btnViewTimetable" onclick="switchView('timetable')" style="border:none;border-radius:0;background:var(--accent);color:#fff;padding:8px 16px;cursor:pointer"><i class="fa-solid fa-calendar-day"></i> Timetable</button>
           <button class="btn view-btn" id="btnViewTable" onclick="switchView('table')" style="border:none;border-radius:0;background:transparent;color:var(--text-sub);padding:8px 16px;cursor:pointer"><i class="fa-solid fa-list"></i> Table</button>
         </div>
+        <select class="filter-sel" id="fSchoolYear" onchange="loadSchedule()"><option value="">Loading school years...</option></select>
         <select class="filter-sel" id="fSem" onchange="loadSchedule()"><option value="1">1st Semester</option><option value="2">2nd Semester</option></select>
     </div>
   </div>
@@ -93,7 +97,7 @@ requireRole('teacher');
     <div class="timetable-wrap" id="viewTimetable">
       <div class="plot-legend" style="margin-bottom:12px;display:flex;gap:20px;font-size:0.85rem">
         <span class="legend-item" style="display:flex;align-items:center;gap:6px"><span class="legend-dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0ea5e9"></span> LES Class</span>
-        <span class="legend-item" style="display:flex;align-items:center;gap:6px"><span class="legend-dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fbbf24"></span> COED Class</span>
+        <span class="legend-item" style="display:flex;align-items:center;gap:6px"><span class="legend-dot coed" style="display:inline-block;width:12px;height:12px;border-radius:50%"></span> COED Class</span>
       </div>
       <div class="plot-grid-wrap" style="height:650px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card)">
         <div class="plot-grid" id="plotGrid">

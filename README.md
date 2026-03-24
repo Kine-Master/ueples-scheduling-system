@@ -1,86 +1,107 @@
-# 📅 UEP LES Scheduling System
+# UEP LES Scheduling System
 
-A Path-to-Premium Web-Based Faculty Workload & Scheduling System designed for the Laboratory Elementary School (LES). This system automates class scheduling, workload reporting, and conflict detection with a modern, high-end user interface.
+Web-based faculty scheduling and workload management system for UEP LES.
 
-## 🚀 Role-Based Features
+## Tech Stack
+- Frontend: HTML, CSS, JavaScript
+- Backend: Native PHP
+- Database: MySQL or MariaDB
+- Web server: Apache (XAMPP on Windows, Apache2 on Linux)
 
-### 💻 System Administrator
-* **User Management:** Full control over account creation, role assignment, and password resets.
-* **Audit Logs:** Monitor all system activities (logins, updates, deletions) with IP tracking.
-* **System Archives:** Manage historical schedule data and cleanup thresholds.
+## Requirements
+- PHP 8.0+ with `pdo_mysql`
+- MySQL 8+ or MariaDB 10+
+- Apache 2.4+
+- Git
 
-### 👤 School Principal
-* **Read-Only Oversight:** Monitor school operations without risk of data modification.
-* **Live Tracking Board:** Real-time visibility into active classes, faculty locations, and room status.
-* **Analytics Dashboard:** Visual insights into faculty distribution and system-wide scheduling.
+## Environment Configuration
+The project now reads database settings from `.env`.
 
-### 📝 School Secretary
-* **Primary Scheduler:** Full management of **LES** (internal) and **COED** (external) schedules.
-* **Master Data Management:** Maintain buildings, rooms, curricula, and academic subjects.
-* **Conflict Detection:** Real-time automated validation for time, teacher, and room overlaps.
-* **Report Generation:** Export and print professional faculty workload reports.
+1. Copy `.env.example` to `.env`.
+2. Update database values.
 
-### 👨‍🏫 Faculty Teacher
-* **Classroom Management:** Manage student lists and enrollment for assigned LES sections.
-* **Personalized Schedule:** Quick access to personal workload and class timetables.
-* **Responsive Dashboard:** View schedules on any device (mobile/desktop).
+Required keys:
+- `UEP_DB_HOST`
+- `UEP_DB_PORT`
+- `UEP_DB_NAME`
+- `UEP_DB_USER`
+- `UEP_DB_PASS`
+- `UEP_TIMEZONE`
 
----
+## Windows Setup (XAMPP)
 
-## 💎 Premium UI & UX
-* **Glassmorphism Design:** A modern, frosted-glass aesthetic for a premium feel.
-* **Dynamic Dark/Light Mode:** seamless theme switching across the entire platform.
-* **Smooth Animations:** micro-interactions and transitions for enhanced usability.
-* **Responsive Layout:** fully functional on tablets and mobile devices.
-
----
-
-## 🛠️ Tech Stack
-* **Frontend:** HTML5, CSS3 (Vanilla), JavaScript (ES6+)
-* **Backend:** PHP (Native)
-* **Database:** MySQL / MariaDB
-* **Server:** Apache (via XAMPP)
-
----
-
-## ⚙️ Installation Guide
-
-### 1. Prerequisites
-* **XAMPP** (or any PHP/MySQL environment).
-* **Git** installed on your system.
-
-### 2. Clone the Repository
+1. Clone the repository into `C:\xampp\htdocs`.
 ```bash
-git clone https://github.com/Kine-Master/ueples-scheduling-system.git ueples
+cd C:\xampp\htdocs
+git clone https://github.com/Kine-Master/ueples-scheduling-system.git
 ```
 
-### 3. Database Setup
-1. Start **Apache** and **MySQL** in XAMPP.
-2. Visit `http://localhost/ueples/setup.php` in your browser.
-3. The script will automatically:
-    - Create the `ueples_scheduling_system` database.
-    - Setup all necessary tables.
-    - Seed default administrative and faculty accounts.
-4. **Important:** Delete `setup.php` after successful installation.
+2. Create env file.
+```bash
+cd C:\xampp\htdocs\ueples-scheduling-system
+copy .env.example .env
+```
 
-### 4. Configuration
-1. Navigate to `backend/config/`.
-2. Rename `db.example.php` to `db.php`.
-3. Configure your credentials if different from default (`root` with no password).
+3. Edit `.env` and set your database credentials.
 
-### 🔑 Default Credentials
+4. Start services in XAMPP Control Panel:
+- Apache
+- MySQL
+
+5. Run installer in browser:
+- `http://localhost/ueples-scheduling-system/setup.php`
+
+6. After successful setup, delete or restrict `setup.php`.
+
+7. Open login page:
+- `http://localhost/ueples-scheduling-system/frontend/login/index.php`
+
+## Linux Setup (Apache + MariaDB/MySQL)
+
+Example below is for Ubuntu/Debian.
+
+1. Install packages.
+```bash
+sudo apt update
+sudo apt install -y apache2 mariadb-server php php-mysql php-mbstring php-xml php-curl git
+```
+
+2. Clone into web root.
+```bash
+cd /var/www/html
+sudo git clone https://github.com/Kine-Master/ueples-scheduling-system.git
+sudo chown -R www-data:www-data /var/www/html/ueples-scheduling-system
+```
+
+3. Create env file.
+```bash
+cd /var/www/html/ueples-scheduling-system
+sudo cp .env.example .env
+sudo nano .env
+```
+
+4. Start and enable services.
+```bash
+sudo systemctl enable --now apache2
+sudo systemctl enable --now mariadb
+```
+
+5. Open installer:
+- `http://<server-ip>/ueples-scheduling-system/setup.php`
+
+6. After successful setup, delete or restrict `setup.php`.
+
+7. Open login page:
+- `http://<server-ip>/ueples-scheduling-system/frontend/login/index.php`
+
+## Default Credentials (Seeded by setup)
 | Role | Username | Password |
 | :--- | :--- | :--- |
-| **Admin** | `admin` | `password123` |
-| **Principal** | `principal` | `password123` |
-| **Secretary** | `secretary` | `password123` |
-| **Teacher** | `teacher` | `password123` |
+| Admin | `admin` | `password123` |
+| Principal | `principal` | `password123` |
+| Secretary | `secretary` | `password123` |
+| Teacher | `teacher` | `password123` |
 
----
-
-## 🌐 LAN Access
-To access the system across your local network:
-1. Find your server's local IP or rename the computer to `UEP-SERVER`.
-2. Other devices can access via: `http://UEP-SERVER/ueples/`
-
-📄 **License:** For educational purposes only.
+## Notes
+- If you use a different folder name, update URLs accordingly.
+- Keep `.env` private. Do not commit real credentials.

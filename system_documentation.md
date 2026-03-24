@@ -1,100 +1,126 @@
-# 📘 UEP LES Scheduling System - Comprehensive Documentation
+# UEP LES Scheduling System - System Documentation
 
-## 1. System Overview
-The **UEP LES Scheduling System** is a modern, web-based platform designed to automate the complex process of faculty workload management and class scheduling for the Laboratory Elementary School (LES). It transitions from traditional, error-prone manual methods to a streamlined, digital workflow with real-time conflict detection and professional report generation.
+## 1. Overview
+UEP LES Scheduling System is a role-based web application for managing:
+- faculty schedules
+- workloads
+- class/room utilization
+- printable schedule reports
 
----
+It supports four roles: `admin`, `principal`, `secretary`, and `teacher`.
 
-## 2. Technical Architecture
+## 2. Architecture
 
-### 🛠️ Core Tech Stack
-- **Frontend:** HTML5, Vanilla CSS3 (Custom Design System), JavaScript (ES6+ Mobile-Responsive)
-- **Backend:** Native PHP (Modular Backend Services)
-- **Database:** MySQL / MariaDB (Relational Schema)
-- **Environment:** Apache (via XAMPP)
+### 2.1 Stack
+- Frontend: Vanilla HTML/CSS/JS
+- Backend: Native PHP modules
+- Database: MySQL/MariaDB
+- Web Server: Apache
 
-### 🏗️ Directory Structure
-- `/frontend`: Contains role-based UI dashboards and public facing pages.
-- `/backend`: Modular PHP scripts for core business logic (auth, database, scheduling, students).
-- `/backend/config`: System-wide settings and database connections.
-- `/assets`: Shared CSS, JS libraries, and iconography (FontAwesome).
+### 2.2 Key Directories
+- `frontend/` - Role-based pages and UI assets
+- `backend/` - Auth, master data, scheduling, reports, and API endpoints
+- `backend/config/` - DB connection, env loader, common functions
+- `setup.php` - Database and seed installer
 
----
+## 3. Environment Variables
 
-## 3. Role-Based Access Control (RBAC)
+Configuration is loaded from `.env` (and optional `.env.local`) by `backend/config/db.php`.
 
-The system is built on a four-tier privilege model to ensure security and operational efficiency.
-
-| Role | Access Level | Primary Focus |
+| Variable | Purpose | Example |
 | :--- | :--- | :--- |
-| **System Admin** | Global Read/Write | Infrastructure, Security, & Users |
-| **Secretary** | Full Operational | Scheduling & Data Management |
-| **Principal** | Read-Only | Oversight & Strategic Monitoring |
-| **Teacher** | Restricted Read/Write | Classroom & Personal Scheduling |
+| `UEP_DB_HOST` | DB host | `localhost` |
+| `UEP_DB_PORT` | DB port | `3306` |
+| `UEP_DB_NAME` | Database name | `ueples_scheduling_system` |
+| `UEP_DB_USER` | Database username | `root` |
+| `UEP_DB_PASS` | Database password | `` (empty) |
+| `UEP_TIMEZONE` | App timezone | `Asia/Manila` |
+| `UEP_APP_ENV` | Environment label | `development` |
+| `UEP_APP_DEBUG` | Debug flag | `true` |
+| `UEP_BASE_PATH` | Intended base path value | `/ueples-scheduling-system` |
 
-### 🛠️ Admin (UID: 1)
-- **User management:** Create, update, and manage all system accounts.
-- **Security:** monitor system-wide audit logs with IP tracking.
-- **Maintenance:** manage database archives and automated cleanup thresholds.
+## 4. Installation
 
-### 📝 Secretary (UID: 3)
-- **Master Data Specialist:** maintain lists of buildings, rooms, curricula, and subjects.
-- **Unified Scheduling:** create and manage both internal (LES) and external (COED) schedules.
-- **Conflict Management:** resolve time, room, and teacher overlaps.
-- **Reporting:** generate professional-grade faculty workload reports.
+### 4.1 Windows Installation (XAMPP)
 
-### 👤 Principal (UID: 2)
-- **Executive Dashboard:** view real-time statistics on active schedules and faculty workload.
-- **Live Tracking Board:** real-time tracking of which teacher is in which room for which class.
-- **Read-Only Access:** full oversight without the ability to modify core data.
+1. Install XAMPP (Apache + MySQL).
+2. Clone project into `C:\xampp\htdocs`.
+```bash
+cd C:\xampp\htdocs
+git clone https://github.com/Kine-Master/ueples-scheduling-system.git
+cd ueples-scheduling-system
+```
+3. Create `.env`.
+```bash
+copy .env.example .env
+```
+4. Edit `.env` with correct DB credentials.
+5. Start Apache and MySQL from XAMPP Control Panel.
+6. Run installer:
+- `http://localhost/ueples-scheduling-system/setup.php`
+7. Remove or secure `setup.php` after successful install.
+8. Login page:
+- `http://localhost/ueples-scheduling-system/frontend/login/index.php`
 
-### 👨‍🏫 Teacher (UID: 4)
-- **Student Enrollment:** manage names and details of students in assigned sections.
-- **Personal Timetable:** dynamic view of their specific schedule for the current semester.
-- **Personalized Dashboard:** quick access to key classroom metrics.
+### 4.2 Linux Installation (Apache + MariaDB/MySQL)
 
----
+Example for Ubuntu/Debian.
 
-## 4. Key Functional Features
+1. Install runtime dependencies.
+```bash
+sudo apt update
+sudo apt install -y apache2 mariadb-server php php-mysql php-mbstring php-xml php-curl git
+```
+2. Deploy source.
+```bash
+cd /var/www/html
+sudo git clone https://github.com/Kine-Master/ueples-scheduling-system.git
+sudo chown -R www-data:www-data /var/www/html/ueples-scheduling-system
+```
+3. Create and edit `.env`.
+```bash
+cd /var/www/html/ueples-scheduling-system
+sudo cp .env.example .env
+sudo nano .env
+```
+4. Enable and start services.
+```bash
+sudo systemctl enable --now apache2
+sudo systemctl enable --now mariadb
+```
+5. Run installer in browser:
+- `http://<server-ip>/ueples-scheduling-system/setup.php`
+6. Remove or secure `setup.php` after install.
+7. Login:
+- `http://<server-ip>/ueples-scheduling-system/frontend/login/index.php`
 
-### 📅 Advanced Scheduling Engine
-- **Unified Interface:** a single page for creating both internal school schedules (LES) and external college loads (COED).
-- **Conflict Prevention:** automatic validation logic prevents a teacher or room from being in two places at once.
-- **Color-Coded Timetable:** visual grid representation of the entire school week.
+## 5. Post-Install Checklist
+- Confirm you can log in as each role.
+- Confirm master data loads (school year, subjects, rooms).
+- Confirm schedule pages load without API errors.
+- Confirm report pages print with timetable layout.
+- Confirm teacher schedule filtering includes school year and semester.
 
-### 📊 Professional Workload Reporting
-- **Automated Calculations:** system automatically tallies total units and hours per teacher.
-- **Print-Ready Layouts:** reports include official branding and designated signature blocks.
+## 6. Default Seed Accounts
+| Role | Username | Password |
+| :--- | :--- | :--- |
+| Admin | `admin` | `password123` |
+| Principal | `principal` | `password123` |
+| Secretary | `secretary` | `password123` |
+| Teacher | `teacher` | `password123` |
 
-### 🔍 Live Tracking Board
-- **Real-Time Visibility:** dynamically displays "What's Happening Now" across the entire school.
-- **Room Utilization:** quickly see which rooms are occupied or available at any given time.
+## 7. Security Notes
+- Never commit real credentials in `.env`.
+- Keep `.env` and `.env.local` private.
+- Restrict access to `setup.php` after deployment.
+- Use strong passwords in production.
 
----
-
-## 5. Design System & UI/UX
-The system employs a **"Path-to-Premium"** design philosophy:
-- **Glassmorphism:** modern frosted-glass effects for cards and panels.
-- **Dynamic Themes:** seamless toggle between high-contrast dark mode and clean light mode.
-- **Micro-Animations:** subtle transitions for modal pop-ups and sidebars.
-- **Responsive Layout:** fully optimized for use on standard PCs, tablets, and mobile devices.
-
----
-
-## 6. Database Schema Brief
-- `user` / `role`: manages identity and permissions.
-- `schedule`: the core table storing both LES and COED time slots.
-- `school_year` / `grade_level` / `class_section`: define the academic hierarchy.
-- `room` / `building`: manage physical infrastructure.
-- `subject` / `curriculum`: manage academic offerings.
-- `audit_log`: stores a history of all critical actions for accountability.
-
----
-
-## 🌐 Deployment & Access
-- **Local Server:** system is typically hosted on a designated `UEP-SERVER`.
-- **LAN Access:** other users access the system via the local network (WiFi/Ethernet).
-- **Automation:** installer (`setup.php`) handles full database creation and seeding.
-
----
-📄 *This documentation is for internal project reference only.*
+## 8. Troubleshooting
+- `Database Connection Failed`:
+  - Verify `.env` values and DB service status.
+- `Failed to open stream ... db.php`:
+  - Ensure `backend/config/db.php` exists and paths are unchanged.
+- Empty report data:
+  - Check active school year and selected filters.
+- Permissions issues on Linux:
+  - Ensure Apache user can read project files (`www-data` ownership).

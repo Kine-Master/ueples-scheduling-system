@@ -64,10 +64,10 @@ function buildBlockMap(schedules) {
 
         const isLES = s.schedule_type === 'LES';
         let actSubj = isLES ? s.subject_name : s.coed_subject;
-        let actSec = isLES ? `${s.grade_name} - ${s.section_name}` : s.coed_grade_level;
+        let actSec = isLES ? `${s.grade_name} - ${s.section_name}` : (s.coed_grade_level || 'COED');
         let actRoom = isLES ? (s.room_name ? `${s.room_name} (${s.building_name})` : 'TBA') : (s.coed_room ? `${s.coed_room} (${s.coed_building || 'External'})` : 'TBA');
-
-        let labelHtml = `<strong>${escHtml(actSubj)}</strong><br><small>${escHtml(actSec)}</small><br><small style="opacity:0.8"><i class="fa-solid fa-door-open"></i> ${escHtml(actRoom)}</small>`;
+        let actTeacher = s.teacher_name || 'Teacher';
+        let labelHtml = `<strong>${escHtml(actSubj)}</strong><br><small>${escHtml(actTeacher)}</small><br><small>${escHtml(actSec)}</small><br><small style="opacity:0.8"><i class="fa-solid fa-door-open"></i> ${escHtml(actRoom)}</small>`;
 
         blocks.set(startKey, {
             type: s.schedule_type,
@@ -126,7 +126,7 @@ function renderGrid(schedules) {
 
             if (isBlock) {
                 const b = blocks.get(key);
-                cls = b.type === 'LES' ? 'occupied' : 'preview';
+                cls = b.type === 'LES' ? 'occupied' : 'coed';
                 label = b.label;
                 span = b.span;
             }
@@ -141,15 +141,49 @@ function renderGrid(schedules) {
     grid.innerHTML = html;
 }
 
+async function loadSchoolYears() {
+    const sel = document.getElementById('fSchoolYear');
+    try {
+        const res = await fetch('../../../backend/master_data/school_year/list.php');
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Failed to load school years');
+        const rows = json.data || [];
+        sel.innerHTML = '';
+        rows.forEach(sy => {
+            const opt = document.createElement('option');
+            opt.value = sy.school_year_id;
+            opt.textContent = sy.label + (Number(sy.is_active) === 1 ? ' (Active)' : '');
+            if (Number(sy.is_active) === 1) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        if (!sel.value && rows[0]) sel.value = rows[0].school_year_id;
+    } catch (e) {
+        sel.innerHTML = '<option value="">School year unavailable</option>';
+        console.error(e);
+    }
+}
+
+function updatePrintLink() {
+    const sem = document.getElementById('fSem').value;
+    const sy = document.getElementById('fSchoolYear').value;
+    const params = new URLSearchParams({ semester: sem });
+    if (sy) params.append('school_year_id', sy);
+    document.getElementById('printScheduleBtn').href = `report.php?${params.toString()}`;
+}
+
 async function loadSchedule() {
     const sem = document.getElementById('fSem').value;
+    const sy = document.getElementById('fSchoolYear').value;
     const body = document.getElementById('schedBody');
     const wrap = document.getElementById('viewTimetable');
+    updatePrintLink();
 
     body.innerHTML = '<tr><td colspan="5" class="loading-text"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
 
     try {
-        const res = await fetch(`../../../backend/schedule/list.php?semester=${sem}`);
+        let url = `../../../backend/schedule/list.php?semester=${encodeURIComponent(sem)}`;
+        if (sy) url += `&school_year_id=${encodeURIComponent(sy)}`;
+        const res = await fetch(url);
         const json = await res.json();
 
         if (json.status !== 'success') throw new Error(json.message);
@@ -188,4 +222,9 @@ async function loadSchedule() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadSchedule);
+document.addEventListener('DOMContentLoaded', () => {
+    loadSchoolYears().then(() => {
+        updatePrintLink();
+        loadSchedule();
+    });
+});
